@@ -2,3 +2,4 @@
 .autocommit-hash
 
 .DS_Store
+.nvimlog
