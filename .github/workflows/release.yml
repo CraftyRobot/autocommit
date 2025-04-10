@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   build-and-release:
@@ -41,34 +41,30 @@ jobs:
           cp autocommit.sh pkg/usr/local/bin/autocommit
           chmod +x pkg/usr/local/bin/autocommit
           mkdir -p pkg/DEBIAN
-          bash -c 'cat <<EOF > pkg/DEBIAN/control
-Package: autocommit
-Version: ${VERSION#v}
-Section: utils
-Priority: optional
-Architecture: all
-Maintainer: Msonc
-Description: A tiny Git auto-committer script in Bash
-Depends: git
-EOF'
+          echo "Package: autocommit" > pkg/DEBIAN/control
+          echo "Version: ${VERSION#v}" >> pkg/DEBIAN/control
+          echo "Section: utils" >> pkg/DEBIAN/control
+          echo "Priority: optional" >> pkg/DEBIAN/control
+          echo "Architecture: all" >> pkg/DEBIAN/control
+          echo "Maintainer: Msonc" >> pkg/DEBIAN/control
+          echo "Description: A tiny Git auto-committer script in Bash" >> pkg/DEBIAN/control
+          echo "Depends: git" >> pkg/DEBIAN/control
           dpkg-deb --build pkg autocommit_${VERSION#v}_all.deb
 
       - name: Generate Homebrew formula
         run: |
           SHA=$(cut -d ' ' -f1 autocommit-${VERSION#v}.tar.gz.sha256)
-          bash -c "cat <<EOF > autocommit.rb
-class Autocommit < Formula
-  desc \"Tiny Git auto-committer script\"
-  homepage \"https://github.com/${{ github.repository }}\"
-  url \"https://github.com/${{ github.repository }}/archive/refs/tags/${VERSION}.tar.gz\"
-  sha256 \"$SHA\"
-  license \"MIT\"
-
-  def install
-    bin.install \"autocommit.sh\" => \"autocommit\"
-  end
-end
-EOF"
+          echo "class Autocommit < Formula" > autocommit.rb
+          echo "  desc \"Tiny Git auto-committer script\"" >> autocommit.rb
+          echo "  homepage \"https://github.com/${{ github.repository }}\"" >> autocommit.rb
+          echo "  url \"https://github.com/${{ github.repository }}/archive/refs/tags/${VERSION}.tar.gz\"" >> autocommit.rb
+          echo "  sha256 \"$SHA\"" >> autocommit.rb
+          echo "  license \"MIT\"" >> autocommit.rb
+          echo "" >> autocommit.rb
+          echo "  def install" >> autocommit.rb
+          echo "    bin.install \"autocommit.sh\" => \"autocommit\"" >> autocommit.rb
+          echo "  end" >> autocommit.rb
+          echo "end" >> autocommit.rb
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v1
