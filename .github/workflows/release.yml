@@ -72,7 +72,7 @@ jobs:
           name: "Auto Committer ${{ env.VERSION }}"
           tag_name: ${{ env.VERSION }}
           files: |
-            autocommit-${{ env.VERSION#v }}.tar.gz
-            autocommit-${{ env.VERSION#v }}.tar.gz.sha256
-            autocommit_${{ env.VERSION#v }}_all.deb
+            autocommit-${{ env.VERSION }}.tar.gz
+            autocommit-${{ env.VERSION }}.tar.gz.sha256
+            autocommit_${{ env.VERSION }}_all.deb
             autocommit.rb
