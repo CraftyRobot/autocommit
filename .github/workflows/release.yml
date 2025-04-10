@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # triggers on v1.0.0, v2.0.1, etc.
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set version
+        run: echo "VERSION=${GITHUB_REF##*/}" >> $GITHUB_ENV
+
+      - name: Create dist archive
+        run: |
+          mkdir dist
+          cp autocommit.sh dist/autocommit
+          chmod +x dist/autocommit
+          tar -czf autocommit-$VERSION.tar.gz -C dist autocommit
+          sha256sum autocommit-$VERSION.tar.gz > autocommit-$VERSION.tar.gz.sha256
+
+      - name: Build .deb package
+        run: |
+          mkdir -p pkg/usr/local/bin
+          cp autocommit.sh pkg/usr/local/bin/autocommit
+          chmod +x pkg/usr/local/bin/autocommit
+          mkdir -p pkg/DEBIAN
+          cat <<EOF > pkg/DEBIAN/control
+          Package: autocommit
+          Version: ${VERSION#v}
+          Section: utils
+          Priority: optional
+          Architecture: all
+          Maintainer: Msonc
+          Description: A tiny Git auto-committer script in Bash
+          Depends: git
+          EOF
+          dpkg-deb --build pkg autocommit_${VERSION#v}_all.deb
+
+      - name: Generate Homebrew formula
+        run: |
+          SHA=$(cut -d ' ' -f1 autocommit-$VERSION.tar.gz.sha256)
+          FORMULA_FILE=autocommit.rb
+          cat <<EOF > $FORMULA_FILE
+          class Autocommit < Formula
+            desc "Tiny Git auto-committer script"
+            homepage "https://github.com/msonc/autocommit"
+            url "https://github.com/msonc/autocommit/archive/refs/tags/${VERSION}.tar.gz"
+            sha256 "$SHA"
+            license "MIT"
+
+            def install
+              bin.install "autocommit.sh" => "autocommit"
+            end
+          end
+          EOF
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "Auto Committer ${{ env.VERSION }}"
+          tag_name: ${{ env.VERSION }}
+          files: |
+            autocommit-${{ env.VERSION }}.tar.gz
+            autocommit-${{ env.VERSION }}.tar.gz.sha256
+            autocommit_${{ env.VERSION#v }}_all.deb
+            autocommit.rb
