@@ -5,6 +5,7 @@ INTERVAL="${AUTOCOMMIT_INTERVAL:-120}"
 COMMIT_MESSAGE_TEMPLATE="${AUTOCOMMIT_MESSAGE:-Auto-commit at {date}}"
 WATCH_DIR="${AUTOCOMMIT_PATH:-.}"
 BRANCH="${AUTOCOMMIT_BRANCH:-auto-commit}"
+STATE_FILE="${AUTOCOMMIT_STATE_FILE:-}"
 SHOW_HELP=false
 
 # === Help ===
@@ -17,10 +18,11 @@ Options:
   --interval <seconds>    Interval in seconds between checks (default: 120 or \$AUTOCOMMIT_INTERVAL)
   --message <template>    Commit message template. Use {date} as placeholder (default: "Auto-commit at {date}" or \$AUTOCOMMIT_MESSAGE)
   --branch <branch>       Branch to commit to (default: auto-commit or \$AUTOCOMMIT_BRANCH)
+  --state-file <file>     File to use for storing the last hash (default: .autocommit-hash in the watched directory or \$AUTOCOMMIT_STATE_FILE)
   --help                  Show this help message
 
 You can also configure everything via environment variables:
-  AUTOCOMMIT_PATH, AUTOCOMMIT_INTERVAL, AUTOCOMMIT_MESSAGE, AUTOCOMMIT_BRANCH
+  AUTOCOMMIT_PATH, AUTOCOMMIT_INTERVAL, AUTOCOMMIT_MESSAGE, AUTOCOMMIT_BRANCH, AUTOCOMMIT_STATE_FILE
 
 Example:
   $0 --path ~/myrepo --interval 300 --message "Backup: {date}" --branch main
@@ -38,6 +40,8 @@ while [[ $# -gt 0 ]]; do
       COMMIT_MESSAGE_TEMPLATE="$2"; shift 2 ;;
     --branch)
       BRANCH="$2"; shift 2 ;;
+    --state-file)
+      STATE_FILE="$2"; shift 2 ;;
     --help)
       SHOW_HELP=true; shift ;;
     *)
@@ -61,36 +65,45 @@ fi
 
 cd "$WATCH_DIR" || exit 1
 
-if [ ! -d ".git" ]; then
-  echo "❌ Error: $WATCH_DIR is not a Git repository." >&2
+# 🔁 Replace naive .git dir check with proper Git worktree detection
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "❌ Error: $WATCH_DIR is not a valid Git repository." >&2
   exit 1
+fi
+
+# === Determine state file location ===
+if [ -z "$STATE_FILE" ]; then
+  STATE_FILE="$WATCH_DIR/.autocommit-hash"
 fi
 
 # === Ensure Branch Exists ===
 git checkout "$BRANCH" 2>/dev/null || git checkout -b "$BRANCH"
 
-# === Change Detection ===
-HASH_ID=$(echo "$WATCH_DIR" | sha1sum | awk '{print $1}')
-LAST_HASH_FILE="/tmp/auto-committer-$HASH_ID.hash"
-
+# === Compute directory hash ===
 compute_dir_hash() {
-  find . -type f -not -path './.git/*' -exec sha1sum {} \; | sort | sha1sum
+  find . -type f \
+    -not -path './.git/*' \
+    -not -name "$(basename "$STATE_FILE")" \
+    -exec sha1sum {} \; | sort | sha1sum
 }
 
-if [ ! -f "$LAST_HASH_FILE" ]; then
-  compute_dir_hash > "$LAST_HASH_FILE"
+# === Initialize state ===
+if [ ! -f "$STATE_FILE" ]; then
+  compute_dir_hash > "$STATE_FILE"
 fi
 
-echo "📁 Watching '$WATCH_DIR' every $INTERVAL seconds"
-echo "🔁 Committing to branch '$BRANCH'"
-echo "✏️ Message template: $COMMIT_MESSAGE_TEMPLATE"
-echo "📦 Commit hash tracking file: $LAST_HASH_FILE"
+# === Info ===
+echo "📁 Watching:         '$WATCH_DIR'"
+echo "🕒 Interval:         ${INTERVAL}s"
+echo "🔁 Committing to:    '$BRANCH'"
+echo "✏️  Commit message:  $COMMIT_MESSAGE_TEMPLATE"
+echo "📄 State file:       $STATE_FILE"
 echo ""
 
 # === Main Loop ===
 while true; do
   CURRENT_HASH=$(compute_dir_hash)
-  LAST_HASH=$(cat "$LAST_HASH_FILE")
+  LAST_HASH=$(cat "$STATE_FILE")
 
   if [ "$CURRENT_HASH" != "$LAST_HASH" ]; then
     echo "✅ Changes detected at $(date)"
@@ -102,7 +115,7 @@ while true; do
     git commit -m "$COMMIT_MESSAGE"
     git push origin "$BRANCH"
 
-    echo "$CURRENT_HASH" > "$LAST_HASH_FILE"
+    echo "$CURRENT_HASH" > "$STATE_FILE"
   else
     echo "🟢 No changes at $(date)"
   fi

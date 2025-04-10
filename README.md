@@ -1,6 +1,9 @@
+Auto Committer by @LambergaR — MIT License
 # 🕒 Auto Committer
 
 A lightweight Bash script that watches a Git repository and automatically commits changes at regular intervals. Ideal for versioning auto-generated files, notes, or backups.
+
+MIT licensed. Created by @LambergaR — a mention or link back is appreciated ❤️
 
 ## ✨ Features
 
@@ -105,7 +108,7 @@ journalctl -u auto-committer@myproject -f
 
 ## 📂 File Tracking
 
-The script uses a hash of all file contents (excluding `.git`) to detect changes.  
+The script uses a hash of all file contents (excluding `.git`) to detect changes.
 It stores the last known hash in `/tmp/auto-committer-<hash>.hash`.
 
 ---
