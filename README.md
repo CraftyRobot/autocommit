@@ -1,4 +1,3 @@
-Auto Committer by @LambergaR — MIT License
 # 🕒 Auto Committer
 
 A lightweight Bash script that watches a Git repository and automatically commits changes at regular intervals. Ideal for versioning auto-generated files, notes, or backups.
@@ -92,7 +91,7 @@ WantedBy=multi-user.target
 
 ### 3. Enable and start
 
-```json
+```bash
 sudo systemctl daemon-reload
 sudo systemctl enable auto-committer@myproject
 sudo systemctl start auto-committer@myproject
