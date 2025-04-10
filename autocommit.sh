@@ -1,5 +1,7 @@
 #!/bin/bash
 
+VERSION="dev"
+
 # === Default Configuration ===
 INTERVAL="${AUTOCOMMIT_INTERVAL:-120}"
 COMMIT_MESSAGE_TEMPLATE="${AUTOCOMMIT_MESSAGE:-Auto-commit at {date}}"
@@ -19,6 +21,7 @@ Options:
   --message <template>    Commit message template. Use {date} as placeholder (default: "Auto-commit at {date}" or \$AUTOCOMMIT_MESSAGE)
   --branch <branch>       Branch to commit to (default: auto-commit or \$AUTOCOMMIT_BRANCH)
   --state-file <file>     File to use for storing the last hash (default: .autocommit-hash in the watched directory or \$AUTOCOMMIT_STATE_FILE)
+  --version               Print the script version
   --help                  Show this help message
 
 You can also configure everything via environment variables:
@@ -44,6 +47,10 @@ while [[ $# -gt 0 ]]; do
       STATE_FILE="$2"; shift 2 ;;
     --help)
       SHOW_HELP=true; shift ;;
+    --version)
+      echo "autocommit version $VERSION"
+      exit 0
+      ;;
     *)
       echo "Unknown option: $1"
       print_help
@@ -65,7 +72,7 @@ fi
 
 cd "$WATCH_DIR" || exit 1
 
-# 🔁 Replace naive .git dir check with proper Git worktree detection
+# 🔁 Worktree-aware Git check
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "❌ Error: $WATCH_DIR is not a valid Git repository." >&2
   exit 1
