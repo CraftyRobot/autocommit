@@ -76,3 +76,15 @@ jobs:
             autocommit-${{ env.VERSION }}.tar.gz.sha256
             autocommit_${{ env.VERSION }}_all.deb
             autocommit.rb
+
+      - name: Push updated formula to tap repo
+        run: |
+          git config --global user.name "autocommit bot"
+          git config --global user.email "bot@autocommit.local"
+
+          git clone https://x-access-token:${{ secrets.TAP_GITHUB_TOKEN }}@github.com/CraftyRobot/homebrew-autocommit.git tap
+          cp autocommit.rb tap/Formula/autocommit.rb
+          cd tap
+          git add Formula/autocommit.rb
+          git commit -m "Update autocommit formula to $VERSION"
+          git push origin main
