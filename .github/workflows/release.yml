@@ -20,9 +20,9 @@ jobs:
       - name: Inject version into script
         run: |
           if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "s/^VERSION=\"dev\"/VERSION=\"${VERSION#v}\"/" autocommit.sh
+            sed -i '' "s/^VERSION=\".*\"/VERSION=\"${VERSION#v}\"/" autocommit.sh
           else
-            sed -i "s/^VERSION=\"dev\"/VERSION=\"${VERSION#v}\"/" autocommit.sh
+            sed -i "s/^VERSION=\".*\"/VERSION=\"${VERSION#v}\"/" autocommit.sh
           fi
 
       - name: Make script executable
@@ -62,6 +62,7 @@ jobs:
           echo "  license \"MIT\"" >> autocommit.rb
           echo "" >> autocommit.rb
           echo "  def install" >> autocommit.rb
+          echo "    chmod 0755, \"autocommit.sh\"" >> autocommit.rb
           echo "    bin.install \"autocommit.sh\" => \"autocommit\"" >> autocommit.rb
           echo "  end" >> autocommit.rb
           echo "end" >> autocommit.rb
@@ -89,3 +90,21 @@ jobs:
           git add Formula/autocommit.rb
           git commit -m "Update autocommit formula to $VERSION"
           git push origin main
+
+      - name: Commit version bump to autocommit.sh and update tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          git config --global user.name "autocommit bot"
+          git config --global user.email "bot@autocommit.local"
+
+          git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} source-repo
+          cd source-repo
+
+          sed -i "s/^VERSION=\".*\"/VERSION=\"${VERSION#v}\"/" autocommit.sh
+          git add autocommit.sh
+          git commit -m "Inject version ${VERSION#v} into autocommit.sh"
+          git push origin HEAD
+
+          git tag -f "${VERSION}"
+          git push --force origin "${VERSION}"
