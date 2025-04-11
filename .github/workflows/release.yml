@@ -7,6 +7,8 @@ on:
 
 jobs:
   build-and-release:
+    if: |
+      !contains(github.event.head_commit.message, 'Inject version')
     name: Build and Publish Release
     runs-on: ubuntu-latest
 
