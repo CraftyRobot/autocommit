@@ -53,18 +53,19 @@ jobs:
 
       - name: Generate Homebrew formula
         run: |
-          SHA=$(cut -d ' ' -f1 autocommit-${VERSION}.tar.gz.sha256)
-          echo "class Autocommit < Formula" > autocommit.rb
-          echo "  desc \"Tiny Git auto-committer script\"" >> autocommit.rb
-          echo "  homepage \"https://github.com/${{ github.repository }}\"" >> autocommit.rb
-          echo "  url \"https://github.com/${{ github.repository }}/archive/refs/tags/${VERSION}.tar.gz\"" >> autocommit.rb
-          echo "  sha256 \"$SHA\"" >> autocommit.rb
-          echo "  license \"MIT\"" >> autocommit.rb
-          echo "" >> autocommit.rb
-          echo "  def install" >> autocommit.rb
-          echo "    bin.install \"autocommit.sh\" => \"autocommit\"" >> autocommit.rb
-          echo "  end" >> autocommit.rb
-          echo "end" >> autocommit.rb
+            SHA=$(cut -d ' ' -f1 autocommit-${VERSION}.tar.gz.sha256)
+            echo "class Autocommit < Formula" > autocommit.rb
+            echo "  desc \"Tiny Git auto-committer script\"" >> autocommit.rb
+            echo "  homepage \"https://github.com/${{ github.repository }}\"" >> autocommit.rb
+            echo "  url \"https://github.com/${{ github.repository }}/archive/refs/tags/${VERSION}.tar.gz\"" >> autocommit.rb
+            echo "  sha256 \"$SHA\"" >> autocommit.rb
+            echo "  license \"MIT\"" >> autocommit.rb
+            echo "" >> autocommit.rb
+            echo "  def install" >> autocommit.rb
+            echo "    chmod 0755 \"autocommit.sh\"" >> autocommit.rb
+            echo "    bin.install \"autocommit.sh\" => \"autocommit\"" >> autocommit.rb
+            echo "  end" >> autocommit.rb
+            echo "end" >> autocommit.rb
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v1
