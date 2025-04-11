@@ -28,12 +28,12 @@ jobs:
       - name: Make script executable
         run: chmod +x autocommit.sh
 
-      - name: Build tar.gz archive
+      - name: Download GitHub tag tarball and calculate SHA
         run: |
-          mkdir -p dist
-          cp autocommit.sh dist/autocommit
-          tar -czf autocommit-${VERSION#v}.tar.gz -C dist autocommit
-          sha256sum autocommit-${VERSION#v}.tar.gz > autocommit-${VERSION#v}.tar.gz.sha256
+          curl -L -o autocommit-${VERSION}.tar.gz \
+            https://github.com/${{ github.repository }}/archive/refs/tags/${VERSION}.tar.gz
+
+          sha256sum autocommit-${VERSION}.tar.gz > autocommit-${VERSION}.tar.gz.sha256
 
       - name: Build .deb package
         run: |
@@ -53,7 +53,7 @@ jobs:
 
       - name: Generate Homebrew formula
         run: |
-          SHA=$(cut -d ' ' -f1 autocommit-${VERSION#v}.tar.gz.sha256)
+          SHA=$(cut -d ' ' -f1 autocommit-${VERSION}.tar.gz.sha256)
           echo "class Autocommit < Formula" > autocommit.rb
           echo "  desc \"Tiny Git auto-committer script\"" >> autocommit.rb
           echo "  homepage \"https://github.com/${{ github.repository }}\"" >> autocommit.rb
