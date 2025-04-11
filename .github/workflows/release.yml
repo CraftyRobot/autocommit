@@ -82,7 +82,7 @@ jobs:
           git config --global user.name "autocommit bot"
           git config --global user.email "bot@autocommit.local"
 
-          git clone https://x-access-token:${{ secrets.TAP_GITHUB_TOKEN }}@github.com/msonc/homebrew-autocommit.git tap
+          git clone https://x-access-token:${{ secrets.TAP_GITHUB_TOKEN }}@github.com/CraftyRobot/homebrew-autocommit.git tap
           mkdir -p tap/Formula
           cp autocommit.rb tap/Formula/autocommit.rb
           cd tap
