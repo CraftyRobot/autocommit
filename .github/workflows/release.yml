@@ -87,6 +87,9 @@ jobs:
           echo "  end" >> autocommit.rb
           echo "end" >> autocommit.rb
 
+      - name: Prepare version without `v`
+        run: echo "VERSION_PLAIN=${VERSION#v}" >> $GITHUB_ENV
+
       - name: Upload release assets
         uses: softprops/action-gh-release@v1
         with:
@@ -95,7 +98,7 @@ jobs:
           files: |
             autocommit-${{ env.VERSION }}.tar.gz
             autocommit-${{ env.VERSION }}.tar.gz.sha256
-            autocommit_${{ env.VERSION }}_all.deb
+            autocommit_${{ env.VERSION_PLAIN }}_all.deb
             autocommit.rb
 
       - name: Push updated formula to tap repo

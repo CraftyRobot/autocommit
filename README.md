@@ -1,134 +1,180 @@
-# 🕒 Auto Committer
+# 🪄 Autocommit
 
-A lightweight Bash script that watches a Git repository and automatically commits changes at regular intervals. Ideal for versioning auto-generated files, notes, or backups.
+A tiny Git auto-committer in Bash that watches a folder, detects changes, and commits them for you.
 
-MIT licensed. Created by @LambergaR — a mention or link back is appreciated ❤️
-
-## ✨ Features
-
-- Polls for changes every N seconds (default: 120)
-- Custom commit message templates with timestamp placeholders
-- Works standalone **or** as a `systemd` template service
-- Supports CLI args **and** environment variables
-- Outputs logs via `stdout` — suitable for terminal, `nohup`, or `systemd` logging
+- 🧠 Smart file hashing (no unnecessary commits)
+- 🕒 Configurable intervals
+- 🧾 Customizable commit messages
+- 🚀 Installable via Homebrew & `.deb` packages
+- 🧩 Can run as a macOS LaunchAgent or Linux systemd service
 
 ---
 
-## 🔧 Usage
+## 🚀 Installation
+
+### 🍎 Homebrew (macOS/Linux)
 
 ```bash
-./autocommit.sh [OPTIONS]
+brew tap CraftyRobot/autocommit
+brew install autocommit
+```
+
+### 🐧 Debian/Ubuntu (.deb)
+
+Download the latest `.deb` from [Releases](https://github.com/CraftyRobot/autocommit/releases):
+
+```bash
+wget https://github.com/CraftyRobot/autocommit/releases/download/v0.1.X/autocommit_0.1.X_all.deb
+sudo dpkg -i autocommit_0.1.X_all.deb
+```
+
+---
+
+## 🛠 Usage
+
+```bash
+autocommit [OPTIONS]
 ```
 
 ### Options
 
-| Option        | Description                                                                                      |
-|---------------|--------------------------------------------------------------------------------------------------|
-| `--path`      | Path to the Git repo to monitor (defaults to current dir or `$AUTOCOMMIT_PATH`)                |
-| `--interval`  | Interval in seconds between checks (defaults to `120` or `$AUTOCOMMIT_INTERVAL`)               |
-| `--message`   | Commit message template. Use `{date}` to include timestamp (defaults to `Auto-commit at {date}`) |
-| `--branch`    | Git branch to commit to (defaults to `auto-commit` or `$AUTOCOMMIT_BRANCH`)                    |
-| `--help`      | Show help message                                                                                |
+- `--path <path>`: Path to Git repo to watch (default: current dir or `$AUTOCOMMIT_PATH`)
+- `--interval <seconds>`: Time between checks (default: 120 or `$AUTOCOMMIT_INTERVAL`)
+- `--message <template>`: Commit message template, use `{date}` as placeholder
+- `--branch <branch>`: Branch to commit to (default: `auto-commit`)
+- `--state-file <file>`: Path to store last known hash (default: `.autocommit-hash`)
+- `--help`: Show help
+- `--version`: Show version
 
-### Example
+Environment variables are supported for all options.
+
+---
+
+## 🔍 How it works
+
+Autocommit watches for changes by hashing the contents of all files (excluding `.git` and the state file).
+It stores the last known hash in a file (default: `.autocommit-hash` in the repo).
+
+When changes are detected:
+
+- Stages all files
+- Commits with the configured message template
+- Pushes to the specified branch (if `origin` exists)
+
+---
+
+## 🧩 Running as a Background Service
+
+### 🖥 macOS (LaunchAgent)
+
+Save this as `~/Library/LaunchAgents/com.craftyrobot.autocommit.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.craftyrobot.autocommit</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/autocommit</string>
+    <string>--path</string>
+    <string>/Users/youruser/path/to/repo</string>
+    <string>--interval</string>
+    <string>60</string>
+    <string>--branch</string>
+    <string>main</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/tmp/autocommit.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/autocommit.err</string>
+</dict>
+</plist>
+```
+
+Then run:
 
 ```bash
-./autocommit.sh \
-  --path ~/projects/my-notes \
-  --interval 300 \
-  --message "Backup commit on {date}" \
-  --branch backup
+launchctl load ~/Library/LaunchAgents/com.craftyrobot.autocommit.plist
 ```
 
 ---
 
-## ⚙️ Environment Variables
+### 🐧 Linux (systemd)
 
-All options can also be passed using environment variables — ideal for `systemd`:
+Create `/etc/systemd/system/autocommit.service`:
 
-| Variable               | CLI Equivalent   |
-|------------------------|------------------|
-| `AUTOCOMMIT_PATH`      | `--path`         |
-| `AUTOCOMMIT_INTERVAL`  | `--interval`     |
-| `AUTOCOMMIT_MESSAGE`   | `--message`      |
-| `AUTOCOMMIT_BRANCH`    | `--branch`       |
-
----
-
-## 🖥️ systemd Integration (Optional)
-
-### 1. Copy the script
-
-```bash
-sudo cp autocommit.sh /usr/local/bin/autocommit.sh
-sudo chmod +x /usr/local/bin/autocommit.sh
-```
-
-### 2. Create a systemd template unit
-
-File: `/etc/systemd/system/auto-committer@.service`
-
-```bash
+```ini
 [Unit]
-Description=Auto Git Committer for %i
+Description=Autocommit Git Watcher
 After=network.target
 
 [Service]
-Type=simple
-ExecStart=/usr/local/bin/autocommit.sh
-WorkingDirectory=/home/%u/repos/%i
-Environment=AUTOCOMMIT_PATH=/home/%u/repos/%i
-Environment=AUTOCOMMIT_INTERVAL=300
-Environment=AUTOCOMMIT_MESSAGE=Auto commit for %i at {date}
-User=%u
-Restart=on-failure
+ExecStart=/usr/local/bin/autocommit --path /home/youruser/repo --interval 60 --branch main
+Restart=always
+User=youruser
+WorkingDirectory=/home/youruser/repo
+StandardOutput=journal
+StandardError=journal
 
 [Install]
-WantedBy=multi-user.target
-```
+WantedBy=default.target
+[/code]
 
-> Replace `/home/%u/repos/%i` with your desired structure if needed.
+Then enable and start the service:
 
-### 3. Enable and start
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable auto-committer@myproject
-sudo systemctl start auto-committer@myproject
-```
-
-### 4. Monitor logs
-
-```bash
-journalctl -u auto-committer@myproject -f
+[code bash]
+sudo systemctl daemon-reexec
+sudo systemctl enable autocommit
+sudo systemctl start autocommit
 ```
 
 ---
 
-## 📂 File Tracking
+## 🪟 Windows Support?
 
-The script uses a hash of all file contents (excluding `.git`) to detect changes.
-It stores the last known hash in `/tmp/auto-committer-<hash>.hash`.
+`autocommit` is just a Bash script, so it can work on Windows with:
+
+- [Git Bash](https://git-scm.com/downloads)
+- [WSL (Windows Subsystem for Linux)](https://learn.microsoft.com/en-us/windows/wsl/)
+- A cross-platform shell like [MSYS2](https://www.msys2.org/)
+
+You can even create a `.bat` or `.vbs` wrapper to run it in the background.
+
+Want native Windows service support? PRs welcome 😉
 
 ---
 
-## 🧪 Test Locally
+## 👨‍🔧 Developing
+
+Run manually:
 
 ```bash
-AUTOCOMMIT_PATH=~/repos/test-repo \
-AUTOCOMMIT_INTERVAL=60 \
-AUTOCOMMIT_MESSAGE="Test commit at {date}" \
-./autocommit.sh
+./autocommit.sh --path ~/myrepo --interval 30 --branch test
+```
+
+To build from source:
+
+```bash
+brew install --build-from-source ./autocommit.rb
 ```
 
 ---
 
 ## 📜 License
 
-MIT – Use freely, modify as needed.
+[MIT](LICENSE)
 
 ---
 
-## 🙌 Contributing
+## ✨ Credits
 
-Pull requests welcome! Ideas, improvements, or even rewrites in Python or Go are fair game.
+Created by [@LambergaR](https://github.com/LambergaR) & contributors.
+Stars appreciated ⭐️ — PRs always welcome!
