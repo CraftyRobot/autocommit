@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.1.22"
+VERSION="0.1.23"
 
 # === Default Configuration ===
 INTERVAL="${AUTOCOMMIT_INTERVAL:-120}"
