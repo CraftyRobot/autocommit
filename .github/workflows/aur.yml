@@ -37,6 +37,8 @@ jobs:
       - name: 📥 Clone AUR repository
         run: |
           git clone ssh://aur@aur.archlinux.org/autocommit-bin.git aur-clone
+          cd aur-clone
+          git checkout master
 
       - name: 📝 Update PKGBUILD and .SRCINFO
         run: |
@@ -59,4 +61,4 @@ jobs:
 
           git add PKGBUILD .SRCINFO
           git commit -m "Release to AUR"
-          git push --force origin HEAD:master
+          git push origin master
