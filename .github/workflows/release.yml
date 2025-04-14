@@ -66,9 +66,9 @@ jobs:
           echo "Section: utils" >> pkg/DEBIAN/control
           echo "Priority: optional" >> pkg/DEBIAN/control
           echo "Architecture: all" >> pkg/DEBIAN/control
-          echo "Maintainer: Msonc" >> pkg/DEBIAN/control
+          echo "Maintainer: LambergaR - martin@craftyrobot.xyz" >> pkg/DEBIAN/control
           echo "Description: A tiny Git auto-committer script in Bash" >> pkg/DEBIAN/control
-          echo "Depends: git" >> pkg/DEBIAN/control
+          echo "Depends: git, bash" >> pkg/DEBIAN/control
           dpkg-deb --build pkg autocommit_${VERSION#v}_all.deb
 
       - name: Generate Homebrew formula
