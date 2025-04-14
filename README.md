@@ -5,27 +5,53 @@ A tiny Git auto-committer in Bash that watches a folder, detects changes, and co
 - 🧠 Smart file hashing (no unnecessary commits)
 - 🕒 Configurable intervals
 - 🧾 Customizable commit messages
-- 🚀 Installable via Homebrew & `.deb` packages
-- 🧩 Can run as a macOS LaunchAgent or Linux systemd service
+- 🚀 Installable via Homebrew, `.deb`, raw script, and AUR
+- 🧩 Runs as a background service on macOS or Linux
 
 ---
 
 ## 🚀 Installation
 
-### 🍎 Homebrew (macOS/Linux)
+### 🌍 Universal one-liner (macOS, Linux)
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/CraftyRobot/autocommit/main/install.sh)"
+```
+
+- Detects your OS & package manager
+- Checks installed version and skips if up to date
+- Reinstall with `--force` if needed:
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/CraftyRobot/autocommit/main/install.sh)" --force
+```
+
+---
+
+### 🐧 Manual `.deb` install (Debian/Ubuntu)
+
+```bash
+wget https://github.com/CraftyRobot/autocommit/releases/download/v0.1.X/autocommit_0.1.X_all.deb
+sudo dpkg -i autocommit_0.1.X_all.deb
+```
+
+---
+
+### 🍺 Homebrew (macOS/Linux)
 
 ```bash
 brew tap CraftyRobot/autocommit
 brew install autocommit
 ```
 
-### 🐧 Debian/Ubuntu (.deb)
+---
 
-Download the latest `.deb` from [Releases](https://github.com/CraftyRobot/autocommit/releases):
+### 🅰️ Arch Linux (via AUR)
+
+If you're on Arch or Manjaro, install with an AUR helper like:
 
 ```bash
-wget https://github.com/CraftyRobot/autocommit/releases/download/v0.1.X/autocommit_0.1.X_all.deb
-sudo dpkg -i autocommit_0.1.X_all.deb
+yay -S autocommit-bin
 ```
 
 ---
@@ -38,36 +64,36 @@ autocommit [OPTIONS]
 
 ### Options
 
-- `--path <path>`: Path to Git repo to watch (default: current dir or `$AUTOCOMMIT_PATH`)
-- `--interval <seconds>`: Time between checks (default: 120 or `$AUTOCOMMIT_INTERVAL`)
-- `--message <template>`: Commit message template, use `{date}` as placeholder
-- `--branch <branch>`: Branch to commit to (default: `auto-commit`)
-- `--state-file <file>`: Path to store last known hash (default: `.autocommit-hash`)
+- `--path <path>`: Git repo to watch (default: current dir or `$AUTOCOMMIT_PATH`)
+- `--interval <seconds>`: Time between checks (default: 120)
+- `--message <template>`: Commit message template, `{date}` will be replaced
+- `--branch <branch>`: Target branch (default: `auto-commit`)
+- `--state-file <file>`: Where to store last hash (default: `.autocommit-hash`)
 - `--help`: Show help
-- `--version`: Show version
+- `--version`: Show installed version
 
-Environment variables are supported for all options.
+Environment variables supported for all options.
 
 ---
 
 ## 🔍 How it works
 
-Autocommit watches for changes by hashing the contents of all files (excluding `.git` and the state file).
-It stores the last known hash in a file (default: `.autocommit-hash` in the repo).
+Autocommit calculates a hash of all file contents (excluding `.git` and the state file).
+If the hash has changed:
 
-When changes are detected:
+- Stages everything
+- Commits with your message template
+- Pushes to the configured branch
 
-- Stages all files
-- Commits with the configured message template
-- Pushes to the specified branch (if `origin` exists)
+It stores the last known hash in `.autocommit-hash` by default.
 
 ---
 
-## 🧩 Running as a Background Service
+## 🧩 Run as a Background Service
 
 ### 🖥 macOS (LaunchAgent)
 
-Save this as `~/Library/LaunchAgents/com.craftyrobot.autocommit.plist`:
+Create `~/Library/LaunchAgents/com.craftyrobot.autocommit.plist`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -75,7 +101,6 @@ Save this as `~/Library/LaunchAgents/com.craftyrobot.autocommit.plist`:
 <dict>
   <key>Label</key>
   <string>com.craftyrobot.autocommit</string>
-
   <key>ProgramArguments</key>
   <array>
     <string>/opt/homebrew/bin/autocommit</string>
@@ -86,7 +111,6 @@ Save this as `~/Library/LaunchAgents/com.craftyrobot.autocommit.plist`:
     <string>--branch</string>
     <string>main</string>
   </array>
-
   <key>RunAtLoad</key>
   <true/>
   <key>KeepAlive</key>
@@ -128,27 +152,13 @@ StandardError=journal
 WantedBy=default.target
 [/code]
 
-Then enable and start the service:
+Enable the service:
 
 [code bash]
 sudo systemctl daemon-reexec
 sudo systemctl enable autocommit
 sudo systemctl start autocommit
 ```
-
----
-
-## 🪟 Windows Support?
-
-`autocommit` is just a Bash script, so it can work on Windows with:
-
-- [Git Bash](https://git-scm.com/downloads)
-- [WSL (Windows Subsystem for Linux)](https://learn.microsoft.com/en-us/windows/wsl/)
-- A cross-platform shell like [MSYS2](https://www.msys2.org/)
-
-You can even create a `.bat` or `.vbs` wrapper to run it in the background.
-
-Want native Windows service support? PRs welcome 😉
 
 ---
 
@@ -160,7 +170,7 @@ Run manually:
 ./autocommit.sh --path ~/myrepo --interval 30 --branch test
 ```
 
-To build from source:
+Build from source:
 
 ```bash
 brew install --build-from-source ./autocommit.rb
@@ -177,4 +187,4 @@ brew install --build-from-source ./autocommit.rb
 ## ✨ Credits
 
 Created by [@LambergaR](https://github.com/LambergaR) & contributors.
-Stars appreciated ⭐️ — PRs always welcome!
+PRs welcome, stars appreciated ⭐
