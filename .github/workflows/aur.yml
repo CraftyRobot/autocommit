@@ -3,7 +3,7 @@ name: Publish to AUR
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   aur:
@@ -36,14 +36,15 @@ jobs:
         run: |
           git clone ssh://aur@aur.archlinux.org/autocommit-bin.git aur-clone
 
-      - name: 📝 Update PKGBUILD
+      - name: 📝 Update PKGBUILD and .SRCINFO
         run: |
           cd aur-clone
 
           sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
           sed -i "s/^source=.*/source=(\"https:\/\/github.com\/CraftyRobot\/autocommit\/releases\/download\/v${VERSION}\/autocommit_${VERSION}_all.deb\")/" PKGBUILD
 
-          makepkg --printsrcinfo > .SRCINFO
+          sed -i "s/pkgver = .*/pkgver = ${VERSION}/" .SRCINFO
+          sed -i "s/source = .*/source = https:\/\/github.com\/CraftyRobot\/autocommit\/releases\/download\/v${VERSION}\/autocommit_${VERSION}_all.deb/" .SRCINFO
 
       - name: 🚀 Commit and push to AUR
         run: |
@@ -54,4 +55,4 @@ jobs:
 
           git add PKGBUILD .SRCINFO
           git commit -m "Release v${VERSION}"
-          git push`
+          git push
