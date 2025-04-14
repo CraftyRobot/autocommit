@@ -59,4 +59,4 @@ jobs:
 
           git add PKGBUILD .SRCINFO
           git commit -m "Release to AUR"
-          git push origin HEAD:master
+          git push --force origin HEAD:master

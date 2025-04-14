@@ -2,7 +2,6 @@
 
 set -e
 
-INSTALL_DIR="/usr/local/bin"
 INSTALL_NAME="autocommit"
 REPO="CraftyRobot/autocommit"
 FORCE=false
@@ -29,10 +28,10 @@ print_update_instructions() {
 
   if command -v brew >/dev/null 2>&1; then
     echo "   • To upgrade: run 'brew upgrade autocommit'"
+  elif command -v yay >/dev/null 2>&1 || command -v paru >/dev/null 2>&1; then
+    echo "   • To upgrade: run your AUR helper (e.g. 'yay -S autocommit-bin')"
   elif command -v dpkg >/dev/null 2>&1; then
     echo "   • To upgrade: download the latest .deb from GitHub and re-install via 'dpkg -i'"
-  elif command -v pacman >/dev/null 2>&1; then
-    echo "   • To upgrade: use an AUR helper like 'yay' or 'paru' to update autocommit"
   else
     echo "   • To upgrade: re-run this script with '--force' to overwrite"
   fi
@@ -44,6 +43,19 @@ install_with_brew() {
   echo "🍺 Homebrew detected, installing via brew..."
   brew tap CraftyRobot/autocommit
   brew install autocommit
+}
+
+install_with_aur() {
+  echo "🐧 Detected Arch-based system. Installing via AUR..."
+  if command -v yay >/dev/null 2>&1; then
+    yay -S --noconfirm autocommit-bin
+  elif command -v paru >/dev/null 2>&1; then
+    paru -S --noconfirm autocommit-bin
+  else
+    echo "❌ No AUR helper found (yay/paru). Please install manually:"
+    echo "   git clone https://aur.archlinux.org/autocommit-bin.git && cd autocommit-bin && makepkg -si"
+    exit 1
+  fi
 }
 
 install_deb_package() {
@@ -67,9 +79,9 @@ install_raw_script() {
   echo "⬇️  Downloading autocommit.sh from GitHub..."
 
   sudo curl -fsSL "https://raw.githubusercontent.com/$REPO/main/autocommit.sh" \
-    -o "$INSTALL_DIR/$INSTALL_NAME"
+    -o "/usr/local/bin/$INSTALL_NAME"
 
-  sudo chmod +x "$INSTALL_DIR/$INSTALL_NAME"
+  sudo chmod +x "/usr/local/bin/$INSTALL_NAME"
 }
 
 check_version() {
@@ -98,6 +110,8 @@ check_version
 
 if command -v brew >/dev/null 2>&1; then
   install_with_brew
+elif command -v pacman >/dev/null 2>&1; then
+  install_with_aur
 elif command -v dpkg >/dev/null 2>&1 && command -v wget >/dev/null 2>&1; then
   install_deb_package
 else
