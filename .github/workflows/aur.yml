@@ -1,0 +1,57 @@
+name: Publish to AUR
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  aur:
+    name: Update AUR (autocommit-bin)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧾 Checkout main repo
+        uses: actions/checkout@v4
+
+      - name: 🧪 Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: 🗝️ Set up SSH for AUR push
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          cat >> ~/.ssh/config <<EOF
+          Host aur.archlinux.org
+            User aur
+            HostName aur.archlinux.org
+            IdentityFile ~/.ssh/aur
+            IdentitiesOnly yes
+            StrictHostKeyChecking no
+          EOF
+
+      - name: 📥 Clone AUR repository
+        run: |
+          git clone ssh://aur@aur.archlinux.org/autocommit-bin.git aur-clone
+
+      - name: 📝 Update PKGBUILD
+        run: |
+          cd aur-clone
+
+          sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
+          sed -i "s/^source=.*/source=(\"https:\/\/github.com\/CraftyRobot\/autocommit\/releases\/download\/v${VERSION}\/autocommit_${VERSION}_all.deb\")/" PKGBUILD
+
+          makepkg --printsrcinfo > .SRCINFO
+
+      - name: 🚀 Commit and push to AUR
+        run: |
+          cd aur-clone
+
+          git config user.name "autocommit bot"
+          git config user.email "bot@craftyrobot.dev"
+
+          git add PKGBUILD .SRCINFO
+          git commit -m "Release v${VERSION}"
+          git push`
